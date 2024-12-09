@@ -3,8 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>حاسبة الأذكار</title>
+  <title>حاسبة الأذكار المتقدمة</title>
+  
+  <!-- إضافة مكتبة Chart.js لعرض الرسوم البيانية -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
+    /* إعادة ضبط النمط الافتراضي */
     * {
       margin: 0;
       padding: 0;
@@ -24,8 +29,8 @@
     }
 
     h1 {
-      font-size: 2.8rem;
-      margin-bottom: 20px;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
     }
 
     #start {
@@ -37,6 +42,7 @@
       border-radius: 6px;
       cursor: pointer;
       transition: transform 0.2s ease-in-out;
+      margin: 10px;
     }
 
     #start:hover {
@@ -44,31 +50,40 @@
     }
 
     #transcript-container {
-      margin: 20px;
+      margin: 20px 0;
       background: rgba(255, 255, 255, 0.1);
-      padding: 10px 20px;
+      padding: 10px;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
       color: white;
       width: 80%;
-      height: 300px;
+      height: 250px;
       overflow-y: auto;
       font-size: 1rem;
       text-align: center;
     }
 
+    #chart-container {
+      width: 80%;
+      margin: 20px auto;
+      height: 300px;
+    }
+
     .repeat {
-      font-size: 1.2rem;
+      font-size: 1rem;
       font-weight: bold;
       color: #00ffff;
-      margin: 10px 0;
+      margin: 5px 0;
     }
   </style>
 </head>
 <body>
-  <h1>حاسبة الأذكار - عدّ تكرارها</h1>
+  <h1>حاسبة الأذكار - عدّ تكرارها وتحليلها</h1>
   <button id="start">ابدأ الاستماع</button>
   <div id="transcript-container"></div>
+  <div id="chart-container">
+    <canvas id="prayerChart" width="400" height="300"></canvas>
+  </div>
 
   <script>
     const startButton = document.getElementById("start");
@@ -76,10 +91,10 @@
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "ar-SA";
-    recognition.continuous = true; 
+    recognition.continuous = true;
     recognition.interimResults = false;
 
-    // قائمة بالأذكار المعروفة
+    // قائمة الأذكار المعروفة
     const knownPrayers = [
       "سبحان الله",
       "الحمد لله",
@@ -89,7 +104,8 @@
       "اللهم صل وسلم على محمد"
     ];
 
-    let counters = {}; // لتتبع التكرارات
+    let counters = {}; // لتخزين التكرارات
+    let prayerChart; // الرسم البياني
 
     // بدء الاستماع عند الضغط على الزر
     startButton.onclick = function () {
@@ -97,7 +113,7 @@
         recognition.start();
         console.log("بدأ الاستماع...");
       } catch (error) {
-        console.error("لا يمكن بدء الاستماع:", error);
+        console.error("خطأ في بدء الاستماع:", error);
       }
     };
 
@@ -112,7 +128,7 @@
     };
 
     recognition.onerror = function (error) {
-      console.error("خطأ في التعرف على الصوت:", error);
+      console.error("خطأ في التعرف:", error);
     };
 
     recognition.onend = function () {
@@ -124,13 +140,13 @@
       for (let prayer of knownPrayers) {
         if (transcript.includes(prayer)) {
           if (counters[prayer]) {
-            counters[prayer] += 1;
+            counters[prayer] += 1; // زيادة التكرار
           } else {
-            counters[prayer] = 1;
+            counters[prayer] = 2; // نبدأ التكرار من العدد 2
           }
 
           renderTranscript(prayer, counters[prayer]);
-          console.log(`التعرف: ${prayer} - العدد الحالي: ${counters[prayer]}`);
+          updateChart();
         }
       }
     }
@@ -145,6 +161,38 @@
         div.textContent = `${prayer} (تكررت ${count} مرات)`;
         transcriptContainer.appendChild(div);
       }
+    }
+
+    // تحديث الرسم البياني
+    function updateChart() {
+      const labels = Object.keys(counters);
+      const data = Object.values(counters);
+
+      const ctx = document.getElementById('prayerChart').getContext('2d');
+
+      if (prayerChart) {
+        prayerChart.destroy();
+      }
+
+      prayerChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'التكرار',
+            data: data,
+            backgroundColor: '#00ffff',
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
     }
   </script>
 </body>
