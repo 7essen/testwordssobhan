@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Word Counter</title>
+</head>
+<body>
+    <h1>عداد الكلمات المنطوقة</h1>
+    <input type="text" id="word" placeholder="أدخل الكلمة" />
+    <button id="start">ابدأ الاستماع</button>
+    <p>الكلمة: <span id="target-word">-</span></p>
+    <p>عدد التكرارات: <span id="count">0</span></p>
+    <p>النص المُسجل: <span id="transcript"></span></p>
+
+    <script>
+        const startButton = document.getElementById('start');
+        const wordInput = document.getElementById('word');
+        const targetWordDisplay = document.getElementById('target-word');
+        const countDisplay = document.getElementById('count');
+        const transcriptDisplay = document.getElementById('transcript');
+
+        let count = 0;
+        let targetWord = '';
+        
+        // إعداد Web Speech API
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'ar-SA'; // تعيين اللغة (العربية مثالاً)
+        recognition.interimResults = true;
+
+        // بدء الاستماع
+        startButton.addEventListener('click', () => {
+            targetWord = wordInput.value.trim();
+            if (!targetWord) {
+                alert('يرجى إدخال كلمة للبحث عنها');
+                return;
+            }
+            targetWordDisplay.textContent = targetWord;
+            count = 0;
+            countDisplay.textContent = count;
+            transcriptDisplay.textContent = '';
+            recognition.start();
+        });
+
+        // معالجة النصوص المُستلمة
+        recognition.addEventListener('result', (event) => {
+            const transcript = Array.from(event.results)
+                .map(result => result[0].transcript)
+                .join(' ');
+            transcriptDisplay.textContent = transcript;
+
+            // عد الكلمات
+            const words = transcript.split(' ');
+            words.forEach(word => {
+                if (word.toLowerCase() === targetWord.toLowerCase()) {
+                    count++;
+                }
+            });
+            countDisplay.textContent = count;
+        });
+
+        recognition.addEventListener('end', () => {
+            recognition.start(); // لإعادة الاستماع تلقائيًا
+        });
+    </script>
+</body>
+</html>
