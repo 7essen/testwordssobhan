@@ -6,10 +6,10 @@
     <title>Speech Word Counter</title>
 </head>
 <body>
-    <h1>عداد الكلمات المنطوقة</h1>
-    <input type="text" id="word" placeholder="أدخل الكلمة" />
+    <h1>عداد الكلمة المنطوقة</h1>
+    <input type="text" id="word" placeholder="أدخل الكلمة المطلوبة" />
     <button id="start">ابدأ الاستماع</button>
-    <p>الكلمة: <span id="target-word">-</span></p>
+    <p>الكلمة المطلوبة: <span id="target-word">-</span></p>
     <p>عدد التكرارات: <span id="count">0</span></p>
     <p>النص المُسجل: <span id="transcript"></span></p>
 
@@ -20,47 +20,46 @@
         const countDisplay = document.getElementById('count');
         const transcriptDisplay = document.getElementById('transcript');
 
-        let count = 0;
-        let targetWord = '';
-        
-        // إعداد Web Speech API
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'ar-SA'; // تعيين اللغة (العربية مثالاً)
-        recognition.interimResults = true;
+        let count = 0; // العداد
 
-        // بدء الاستماع
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'ar-SA'; // اللغة المطلوبة (العربية في هذا المثال)
+        recognition.interimResults = true; // لعرض النص أثناء التسجيل
+
         startButton.addEventListener('click', () => {
-            targetWord = wordInput.value.trim();
+            const targetWord = wordInput.value.trim();
             if (!targetWord) {
-                alert('يرجى إدخال كلمة للبحث عنها');
+                alert('الرجاء إدخال الكلمة المطلوبة للبحث عنها');
                 return;
             }
-            targetWordDisplay.textContent = targetWord;
-            count = 0;
+
+            targetWordDisplay.textContent = targetWord; // عرض الكلمة المطلوبة
+            count = 0; // إعادة تعيين العداد
             countDisplay.textContent = count;
             transcriptDisplay.textContent = '';
             recognition.start();
         });
 
-        // معالجة النصوص المُستلمة
         recognition.addEventListener('result', (event) => {
             const transcript = Array.from(event.results)
-                .map(result => result[0].transcript)
-                .join(' ');
+                .map(result => result[0].transcript) // تجميع النصوص المحولة
+                .join(' ')
+                .toLowerCase(); // تحويل النصوص إلى أحرف صغيرة لتجنب الاختلافات
+
+            // عرض النص المحول
             transcriptDisplay.textContent = transcript;
 
-            // عد الكلمات
-            const words = transcript.split(' ');
-            words.forEach(word => {
-                if (word.toLowerCase() === targetWord.toLowerCase()) {
-                    count++;
-                }
-            });
-            countDisplay.textContent = count;
+            const targetWord = wordInput.value.trim().toLowerCase(); // الكلمة المستهدفة
+            const cleanedTranscript = transcript.replace(/[^\w\s]/g, ''); // تنظيف النص من علامات الترقيم
+
+            const words = cleanedTranscript.split(/\s+/); // تقسيم النص إلى كلمات
+            const occurrences = words.reduce((total, word) => word === targetWord ? total + 1 : total, 0);
+
+            countDisplay.textContent = occurrences; // تحديث العد
         });
 
         recognition.addEventListener('end', () => {
-            recognition.start(); // لإعادة الاستماع تلقائيًا
+            recognition.start(); // إعادة الاستماع تلقائيًا
         });
     </script>
 </body>
