@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>حاسبة الأذكار - حساب الأخطاء في النطق</title>
+  <title>حاسبة الأذكار - حتى مع الأخطاء</title>
   <style>
     * {
       margin: 0;
@@ -66,7 +66,7 @@
   </style>
 </head>
 <body>
-  <h1>حاسبة الأذكار - حتى مع الأخطاء في النطق</h1>
+  <h1>حاسبة الأذكار - حساب الأخطاء أو النطق الخاطئ</h1>
   <button id="start">ابدأ الاستماع</button>
   <div id="transcript-container"></div>
 
@@ -79,7 +79,6 @@
     recognition.continuous = true;
     recognition.interimResults = false;
 
-    // قائمة الأذكار المطلوبة
     const knownPrayers = [
       "سبحان الله",
       "الحمد لله",
@@ -94,6 +93,7 @@
     startButton.onclick = function () {
       try {
         recognition.start();
+        console.log("بدأ الاستماع...");
       } catch (error) {
         console.error("لا يمكن بدء الاستماع:", error);
       }
@@ -104,9 +104,9 @@
         .map(result => result[0].transcript.trim().toLowerCase())
         .join(" ")
         .trim();
-
+      
       if (transcript) {
-        detectPrayers(transcript);
+        checkAndCountPrayers(transcript);
       }
     };
 
@@ -118,30 +118,15 @@
       recognition.start();
     };
 
-    // مقارنة نصوص مرنة تعتمد على التشابه (Fuzzy Matching)
-    function similarity(a, b) {
-      let commonLetters = 0;
-      for (let i = 0; i < Math.min(a.length, b.length); i++) {
-        if (a[i] === b[i]) {
-          commonLetters++;
-        }
-      }
-      return commonLetters / Math.max(a.length, b.length);
-    }
-
-    // وظيفة التحقق من الأذكار مع الأخطاء
-    function detectPrayers(transcript) {
+    function checkAndCountPrayers(transcript) {
       knownPrayers.forEach(prayer => {
-        const similarityScore = similarity(transcript, prayer);
-
-        if (similarityScore > 0.6) { // إذا كانت النسبة أكثر من 0.6 يُحتسب كأذكار
+        if (transcript.includes(prayer)) {
           counters[prayer] = (counters[prayer] || 0) + 1;
           renderUI(prayer, counters[prayer]);
         }
       });
     }
 
-    // تحديث واجهة المستخدم عند حساب التكرار
     function renderUI(prayer, count) {
       const existingDiv = Array.from(transcriptContainer.children).find(div =>
         div.textContent.includes(prayer)
