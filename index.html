@@ -66,7 +66,7 @@
   </style>
 </head>
 <body>
-  <h1>حاسبة الأذكار - عدّ تكرارها في أقل من ثانية</h1>
+  <h1>حاسبة الأذكار - عدّ تكرارها في الوقت الفعلي</h1>
   <button id="start">ابدأ الاستماع</button>
   <div id="transcript-container"></div>
 
@@ -76,8 +76,8 @@
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "ar-SA";
-    recognition.continuous = true; // الاستماع المستمر
-    recognition.interimResults = false; // عدم الانتظار لنتائج مؤقتة
+    recognition.continuous = true; 
+    recognition.interimResults = false; 
 
     const knownPrayers = [
       "سبحان الله",
@@ -119,21 +119,22 @@
       recognition.start();
     };
 
-    // التحقق من الأذكار بشكل آني وسريع
+    // وظيفة للتحقق من الأذكار عند كل مرة تُذكر
     function detectPrayers(transcript) {
       knownPrayers.forEach(prayer => {
-        let regex = new RegExp(`\\b${prayer}\\b`, "g"); // التأكد من التطابق الكامل
+        let regex = new RegExp(`\\b${prayer}\\b`, "g");
         let matches = transcript.match(regex);
 
         if (matches) {
-          counters[prayer] = (counters[prayer] || 0) + matches.length; // حساب عدد المرات
-          updateUI(prayer, counters[prayer]);
+          let matchCount = matches.length; 
+          counters[prayer] = (counters[prayer] || 0) + matchCount;
+          renderUI(prayer, counters[prayer]);
         }
       });
     }
 
-    // تحديث واجهة المستخدم في الوقت الفعلي
-    function updateUI(prayer, count) {
+    // تحديث واجهة المستخدم لتُظهر التكرارات في الوقت الفعلي
+    function renderUI(prayer, count) {
       const existingDiv = Array.from(transcriptContainer.children).find(div =>
         div.textContent.includes(prayer)
       );
