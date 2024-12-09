@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>حاسبة الكلمات المنطوقة</title>
+  <title>حاسبة الجمل المتكررة</title>
   <style>
-    /* CSS لجعل الواجهة جميلة وجذابة */
+    /* إعداد التصميم الجمالي */
     * {
       margin: 0;
       padding: 0;
@@ -14,7 +14,7 @@
 
     body {
       font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      background: linear-gradient(135deg, #ff7eb3, #ff758c);
       color: #fff;
       text-align: center;
       height: 100vh;
@@ -22,22 +22,21 @@
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      overflow: hidden;
     }
 
     h1 {
       font-size: 2.8rem;
       margin-bottom: 20px;
-      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
     }
 
     #start {
-      background: #fff;
-      color: #333;
+      background: #333;
+      color: #fff;
       border: none;
-      padding: 10px 20px;
+      padding: 12px 20px;
       font-size: 1.2rem;
-      border-radius: 5px;
+      border-radius: 6px;
       cursor: pointer;
       transition: transform 0.2s ease-in-out;
     }
@@ -50,52 +49,26 @@
       margin: 20px;
       background: rgba(255, 255, 255, 0.1);
       padding: 10px 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
       color: white;
       width: 80%;
       height: 250px;
       overflow-y: auto;
       font-size: 1rem;
+      text-align: center;
     }
 
-    .word {
-      font-weight: bold;
-      color: #ffd700;
-      font-size: 1.1rem;
-    }
-
-    .word-count {
-      color: #00ffcc;
-      margin-left: 5px;
-    }
-
-    /* إضافة تأثيرات لجعل واجهة مرنة */
-    .words-container {
-      display: flex;
-      justify-content: space-evenly;
-      flex-wrap: wrap;
-      margin-top: 20px;
+    .repeat {
       font-size: 1.2rem;
+      font-weight: bold;
+      color: #00ffff;
+      margin: 10px 0;
     }
-
-    .word-box {
-      background: #333;
-      padding: 5px 10px;
-      margin: 5px;
-      border-radius: 5px;
-      box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
-      transition: all 0.2s ease-in-out;
-    }
-
-    .word-box:hover {
-      transform: scale(1.1);
-    }
-
   </style>
 </head>
 <body>
-  <h1>حاسبة الكلمات المنطوقة</h1>
+  <h1>حاسبة الجمل المتكررة</h1>
   <button id="start">ابدأ الاستماع</button>
   <div id="transcript-container"></div>
 
@@ -103,53 +76,64 @@
     const startButton = document.getElementById("start");
     const transcriptContainer = document.getElementById("transcript-container");
 
-    let wordCounts = {}; // لتخزين عدد مرات التكرار لكل كلمة
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "ar-SA";
     recognition.interimResults = true;
 
+    let sentencesCounter = {}; // عداد لتخزين الجمل المتكررة
+    const repetitionThreshold = 3; // يجب أن تتكرر الجملة 3 مرات لعرضها
+
     // عند الضغط على الزر
     startButton.onclick = function () {
       recognition.start();
-      transcriptContainer.innerHTML = ""; // تنظيف النصوص السابقة
+      transcriptContainer.innerHTML = ""; // إعادة واجهة فارغة
     };
 
-    recognition.onresult = (event) => {
-      let transcript = Array.from(event.results)
+    // عند تحليل النص المحوَّل
+    recognition.onresult = function (event) {
+      const transcript = Array.from(event.results)
         .map((result) => result[0].transcript)
         .join(" ")
-        .toLowerCase(); // تحويل النص إلى أحرف صغيرة
-
-      const words = transcript.split(/\s+/); // تقسيم النص إلى كلمات
-      words.forEach((word) => {
-        if (word.trim() !== "") {
-          if (wordCounts[word]) {
-            wordCounts[word] += 1; // زيادة التكرار
-          } else {
-            wordCounts[word] = 1; // إضافة الكلمة الأولى
-          }
-        }
-      });
-
-      renderWords();
+        .trim();
+        
+      if (transcript) {
+        processTranscript(transcript);
+      }
     };
 
-    recognition.onerror = function (event) {
-      console.error("Error occurred in recognition: ", event.error);
+    recognition.onerror = function (error) {
+      console.error("خطأ في التعرف على الصوت: ", error);
     };
 
     recognition.onend = function () {
-      recognition.start();
+      recognition.start(); // إعادة الاستماع تلقائيًا
     };
 
-    function renderWords() {
-      transcriptContainer.innerHTML = "";
-      for (let word in wordCounts) {
-        const wordBox = document.createElement("div");
-        wordBox.classList.add("word-box");
-        wordBox.innerHTML = `<span class="word">${word}</span><span class="word-count">${wordCounts[word]}</span>`;
-        transcriptContainer.appendChild(wordBox);
+    /**
+     * معالجة النص المُحَّول
+     */
+    function processTranscript(transcript) {
+      // إذا كانت الجملة مكررة 3 مرات أو أكثر، قم بإحصاء ظهورها
+      if (sentencesCounter[transcript]) {
+        sentencesCounter[transcript] += 1; // زيادة العدد
+      } else {
+        sentencesCounter[transcript] = 1;
       }
+
+      // التحقق من العتبة (التكرار 3 مرات أو أكثر)
+      if (sentencesCounter[transcript] >= repetitionThreshold) {
+        renderTranscript(transcript);
+      }
+    }
+
+    /**
+     * عرض الجملة المُكررة
+     */
+    function renderTranscript(sentence) {
+      const div = document.createElement("div");
+      div.className = "repeat";
+      div.textContent = `${sentence} (تكررت ${sentencesCounter[sentence]} مرات)`;
+      transcriptContainer.appendChild(div);
     }
   </script>
 </body>
