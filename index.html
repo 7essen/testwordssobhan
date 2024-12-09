@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>حاسبة الجمل المتكررة</title>
   <style>
-    /* إعداد التصميم الجمالي */
+    /* تصميم واجهة رائعة */
     * {
       margin: 0;
       padding: 0;
@@ -14,7 +14,7 @@
 
     body {
       font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #ff7eb3, #ff758c);
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
       color: #fff;
       text-align: center;
       height: 100vh;
@@ -53,7 +53,7 @@
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
       color: white;
       width: 80%;
-      height: 250px;
+      height: 300px;
       overflow-y: auto;
       font-size: 1rem;
       text-align: center;
@@ -78,21 +78,20 @@
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "ar-SA";
-    recognition.interimResults = true;
+    recognition.interimResults = false; // التحليل النهائي فقط عند إيقاف التحدث
+    recognition.continuous = true; // الاستماع مستمر
 
-    let sentencesCounter = {}; // عداد لتخزين الجمل المتكررة
-    const repetitionThreshold = 3; // يجب أن تتكرر الجملة 3 مرات لعرضها
+    let sentencesCounter = {}; // لتخزين الجمل وعدد التكرار الخاص بها
+    const repetitionThreshold = 3; // العتبة التي يتم عندها عرض الجملة (3 مرات)
 
-    // عند الضغط على الزر
     startButton.onclick = function () {
       recognition.start();
-      transcriptContainer.innerHTML = ""; // إعادة واجهة فارغة
+      console.log("بدء الاستماع...");
     };
 
-    // عند تحليل النص المحوَّل
     recognition.onresult = function (event) {
       const transcript = Array.from(event.results)
-        .map((result) => result[0].transcript)
+        .map(result => result[0].transcript.trim())
         .join(" ")
         .trim();
         
@@ -102,38 +101,37 @@
     };
 
     recognition.onerror = function (error) {
-      console.error("خطأ في التعرف على الصوت: ", error);
+      console.error("حدث خطأ: ", error);
     };
 
     recognition.onend = function () {
-      recognition.start(); // إعادة الاستماع تلقائيًا
+      console.log("تم إيقاف الاستماع");
+      recognition.start(); 
     };
 
-    /**
-     * معالجة النص المُحَّول
-     */
     function processTranscript(transcript) {
-      // إذا كانت الجملة مكررة 3 مرات أو أكثر، قم بإحصاء ظهورها
+      // إذا كانت الجملة مكررة
       if (sentencesCounter[transcript]) {
-        sentencesCounter[transcript] += 1; // زيادة العدد
+        sentencesCounter[transcript] += 1;
       } else {
         sentencesCounter[transcript] = 1;
       }
 
-      // التحقق من العتبة (التكرار 3 مرات أو أكثر)
+      // التحقق من التكرار
       if (sentencesCounter[transcript] >= repetitionThreshold) {
         renderTranscript(transcript);
       }
     }
 
-    /**
-     * عرض الجملة المُكررة
-     */
     function renderTranscript(sentence) {
-      const div = document.createElement("div");
-      div.className = "repeat";
-      div.textContent = `${sentence} (تكررت ${sentencesCounter[sentence]} مرات)`;
-      transcriptContainer.appendChild(div);
+      // التأكد من أنه لا يُعرض أكثر من مرة
+      const existingDivs = Array.from(transcriptContainer.children).filter(div => div.textContent.includes(sentence));
+      if (existingDivs.length === 0) {
+        const div = document.createElement("div");
+        div.classList.add("repeat");
+        div.textContent = `${sentence} (تكررت ${sentencesCounter[sentence]} مرات)`;
+        transcriptContainer.appendChild(div);
+      }
     }
   </script>
 </body>
