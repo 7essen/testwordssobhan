@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>حاسبة الجمل المتكررة</title>
   <style>
-    /* إعادة الألوان الجميلة الأصلية */
     * {
       margin: 0;
       padding: 0;
@@ -27,7 +26,6 @@
     h1 {
       font-size: 2.8rem;
       margin-bottom: 20px;
-      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
     }
 
     #start {
@@ -78,15 +76,19 @@
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "ar-SA";
-    recognition.interimResults = false; 
-    recognition.continuous = true;
+    recognition.continuous = true; // تأكد من الاستماع المستمر
+    recognition.interimResults = false;
 
-    let sentencesCounter = {};
-    const repetitionThreshold = 3; 
+    let sentencesCounter = {}; // عداد الجمل
+    const repetitionThreshold = 3; // العتبة التي تُعرض عندها الجملة
 
     startButton.onclick = function () {
-      recognition.start();
-      console.log("بدء الاستماع...");
+      try {
+        recognition.start();
+        console.log("بدأ الاستماع...");
+      } catch (error) {
+        console.error("لا يمكن بدء الاستماع:", error);
+      }
     };
 
     recognition.onresult = function (event) {
@@ -94,14 +96,13 @@
         .map(result => result[0].transcript.trim())
         .join(" ")
         .trim();
-        
       if (transcript) {
         processTranscript(transcript);
       }
     };
 
     recognition.onerror = function (error) {
-      console.error("حدث خطأ: ", error);
+      console.error("خطأ في التعرف على الصوت:", error);
     };
 
     recognition.onend = function () {
@@ -109,21 +110,33 @@
       recognition.start();
     };
 
+    /**
+     * معالجة النصوص المُعالجة من التعرف
+     */
     function processTranscript(transcript) {
+      console.log("تم التقاط النص:", transcript);
+
       if (sentencesCounter[transcript]) {
         sentencesCounter[transcript] += 1;
       } else {
         sentencesCounter[transcript] = 1;
       }
 
+      console.log("العداد الحالي للجملة:", sentencesCounter[transcript]);
+
       if (sentencesCounter[transcript] >= repetitionThreshold) {
         renderTranscript(transcript);
       }
     }
 
+    /**
+     * عرض الجملة في واجهة التطبيق
+     */
     function renderTranscript(sentence) {
-      const existingDivs = Array.from(transcriptContainer.children).filter(div => div.textContent.includes(sentence));
-      if (existingDivs.length === 0) {
+      const alreadyRendered = Array.from(transcriptContainer.children)
+        .some(div => div.textContent.includes(sentence));
+
+      if (!alreadyRendered) {
         const div = document.createElement("div");
         div.classList.add("repeat");
         div.textContent = `${sentence} (تكررت ${sentencesCounter[sentence]} مرات)`;
