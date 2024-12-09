@@ -1,66 +1,156 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speech Word Counter</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حاسبة الكلمات المنطوقة</title>
+  <style>
+    /* CSS لجعل الواجهة جميلة وجذابة */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      color: #fff;
+      text-align: center;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    #start {
+      background: #fff;
+      color: #333;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1.2rem;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    #start:hover {
+      transform: scale(1.1);
+    }
+
+    #transcript-container {
+      margin: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 10px 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      color: white;
+      width: 80%;
+      height: 250px;
+      overflow-y: auto;
+      font-size: 1rem;
+    }
+
+    .word {
+      font-weight: bold;
+      color: #ffd700;
+      font-size: 1.1rem;
+    }
+
+    .word-count {
+      color: #00ffcc;
+      margin-left: 5px;
+    }
+
+    /* إضافة تأثيرات لجعل واجهة مرنة */
+    .words-container {
+      display: flex;
+      justify-content: space-evenly;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+
+    .word-box {
+      background: #333;
+      padding: 5px 10px;
+      margin: 5px;
+      border-radius: 5px;
+      box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+      transition: all 0.2s ease-in-out;
+    }
+
+    .word-box:hover {
+      transform: scale(1.1);
+    }
+
+  </style>
 </head>
 <body>
-    <h1>عداد الكلمة المنطوقة</h1>
-    <input type="text" id="word" placeholder="أدخل الكلمة المطلوبة" />
-    <button id="start">ابدأ الاستماع</button>
-    <p>الكلمة المطلوبة: <span id="target-word">-</span></p>
-    <p>عدد التكرارات: <span id="count">0</span></p>
-    <p>النص المُسجل: <span id="transcript"></span></p>
+  <h1>حاسبة الكلمات المنطوقة</h1>
+  <button id="start">ابدأ الاستماع</button>
+  <div id="transcript-container"></div>
 
-    <script>
-        const startButton = document.getElementById('start');
-        const wordInput = document.getElementById('word');
-        const targetWordDisplay = document.getElementById('target-word');
-        const countDisplay = document.getElementById('count');
-        const transcriptDisplay = document.getElementById('transcript');
+  <script>
+    const startButton = document.getElementById("start");
+    const transcriptContainer = document.getElementById("transcript-container");
 
-        let count = 0; // العداد
+    let wordCounts = {}; // لتخزين عدد مرات التكرار لكل كلمة
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "ar-SA";
+    recognition.interimResults = true;
 
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'ar-SA'; // اللغة المطلوبة (العربية في هذا المثال)
-        recognition.interimResults = true; // لعرض النص أثناء التسجيل
+    // عند الضغط على الزر
+    startButton.onclick = function () {
+      recognition.start();
+      transcriptContainer.innerHTML = ""; // تنظيف النصوص السابقة
+    };
 
-        startButton.addEventListener('click', () => {
-            const targetWord = wordInput.value.trim();
-            if (!targetWord) {
-                alert('الرجاء إدخال الكلمة المطلوبة للبحث عنها');
-                return;
-            }
+    recognition.onresult = (event) => {
+      let transcript = Array.from(event.results)
+        .map((result) => result[0].transcript)
+        .join(" ")
+        .toLowerCase(); // تحويل النص إلى أحرف صغيرة
 
-            targetWordDisplay.textContent = targetWord; // عرض الكلمة المطلوبة
-            count = 0; // إعادة تعيين العداد
-            countDisplay.textContent = count;
-            transcriptDisplay.textContent = '';
-            recognition.start();
-        });
+      const words = transcript.split(/\s+/); // تقسيم النص إلى كلمات
+      words.forEach((word) => {
+        if (word.trim() !== "") {
+          if (wordCounts[word]) {
+            wordCounts[word] += 1; // زيادة التكرار
+          } else {
+            wordCounts[word] = 1; // إضافة الكلمة الأولى
+          }
+        }
+      });
 
-        recognition.addEventListener('result', (event) => {
-            const transcript = Array.from(event.results)
-                .map(result => result[0].transcript) // تجميع النصوص المحولة
-                .join(' ')
-                .toLowerCase(); // تحويل النصوص إلى أحرف صغيرة لتجنب الاختلافات
+      renderWords();
+    };
 
-            // عرض النص المحول
-            transcriptDisplay.textContent = transcript;
+    recognition.onerror = function (event) {
+      console.error("Error occurred in recognition: ", event.error);
+    };
 
-            const targetWord = wordInput.value.trim().toLowerCase(); // الكلمة المستهدفة
-            const cleanedTranscript = transcript.replace(/[^\w\s]/g, ''); // تنظيف النص من علامات الترقيم
+    recognition.onend = function () {
+      recognition.start();
+    };
 
-            const words = cleanedTranscript.split(/\s+/); // تقسيم النص إلى كلمات
-            const occurrences = words.reduce((total, word) => word === targetWord ? total + 1 : total, 0);
-
-            countDisplay.textContent = occurrences; // تحديث العد
-        });
-
-        recognition.addEventListener('end', () => {
-            recognition.start(); // إعادة الاستماع تلقائيًا
-        });
-    </script>
+    function renderWords() {
+      transcriptContainer.innerHTML = "";
+      for (let word in wordCounts) {
+        const wordBox = document.createElement("div");
+        wordBox.classList.add("word-box");
+        wordBox.innerHTML = `<span class="word">${word}</span><span class="word-count">${wordCounts[word]}</span>`;
+        transcriptContainer.appendChild(wordBox);
+      }
+    }
+  </script>
 </body>
 </html>
