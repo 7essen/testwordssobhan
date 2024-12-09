@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>حاسبة الأذكار - حتى مع الأخطاء</title>
+  <title>حاسبة الأذكار</title>
   <style>
     * {
       margin: 0;
@@ -24,7 +24,7 @@
     }
 
     h1 {
-      font-size: 2.5rem;
+      font-size: 2.8rem;
       margin-bottom: 20px;
     }
 
@@ -51,7 +51,7 @@
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
       color: white;
       width: 80%;
-      height: 400px;
+      height: 300px;
       overflow-y: auto;
       font-size: 1rem;
       text-align: center;
@@ -61,12 +61,12 @@
       font-size: 1.2rem;
       font-weight: bold;
       color: #00ffff;
-      margin: 5px 0;
+      margin: 10px 0;
     }
   </style>
 </head>
 <body>
-  <h1>حاسبة الأذكار - حساب الأخطاء أو النطق الخاطئ</h1>
+  <h1>حاسبة الأذكار - عدّ تكرارها</h1>
   <button id="start">ابدأ الاستماع</button>
   <div id="transcript-container"></div>
 
@@ -76,9 +76,10 @@
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "ar-SA";
-    recognition.continuous = true;
+    recognition.continuous = true; 
     recognition.interimResults = false;
 
+    // قائمة بالأذكار المعروفة
     const knownPrayers = [
       "سبحان الله",
       "الحمد لله",
@@ -88,8 +89,9 @@
       "اللهم صل وسلم على محمد"
     ];
 
-    let counters = {};
+    let counters = {}; // لتتبع التكرارات
 
+    // بدء الاستماع عند الضغط على الزر
     startButton.onclick = function () {
       try {
         recognition.start();
@@ -101,40 +103,43 @@
 
     recognition.onresult = function (event) {
       const transcript = Array.from(event.results)
-        .map(result => result[0].transcript.trim().toLowerCase())
+        .map(result => result[0].transcript.trim())
         .join(" ")
         .trim();
-      
       if (transcript) {
-        checkAndCountPrayers(transcript);
+        checkForPrayers(transcript);
       }
     };
 
     recognition.onerror = function (error) {
-      console.error("خطأ في التعرف:", error);
+      console.error("خطأ في التعرف على الصوت:", error);
     };
 
     recognition.onend = function () {
+      console.log("تم إيقاف الاستماع");
       recognition.start();
     };
 
-    function checkAndCountPrayers(transcript) {
-      knownPrayers.forEach(prayer => {
+    function checkForPrayers(transcript) {
+      for (let prayer of knownPrayers) {
         if (transcript.includes(prayer)) {
-          counters[prayer] = (counters[prayer] || 0) + 1;
-          renderUI(prayer, counters[prayer]);
+          if (counters[prayer]) {
+            counters[prayer] += 1;
+          } else {
+            counters[prayer] = 1;
+          }
+
+          renderTranscript(prayer, counters[prayer]);
+          console.log(`التعرف: ${prayer} - العدد الحالي: ${counters[prayer]}`);
         }
-      });
+      }
     }
 
-    function renderUI(prayer, count) {
-      const existingDiv = Array.from(transcriptContainer.children).find(div =>
-        div.textContent.includes(prayer)
-      );
+    function renderTranscript(prayer, count) {
+      const alreadyRendered = Array.from(transcriptContainer.children)
+        .some(div => div.textContent.includes(prayer));
 
-      if (existingDiv) {
-        existingDiv.textContent = `${prayer} (تكررت ${count} مرات)`;
-      } else {
+      if (!alreadyRendered) {
         const div = document.createElement("div");
         div.classList.add("repeat");
         div.textContent = `${prayer} (تكررت ${count} مرات)`;
