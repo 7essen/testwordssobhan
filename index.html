@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>حاسبة الأذكار</title>
+  <title>حاسبة الأذكار - حساب الأخطاء في النطق</title>
   <style>
     * {
       margin: 0;
@@ -24,7 +24,7 @@
     }
 
     h1 {
-      font-size: 2.8rem;
+      font-size: 2.5rem;
       margin-bottom: 20px;
     }
 
@@ -66,7 +66,7 @@
   </style>
 </head>
 <body>
-  <h1>حاسبة الأذكار - عدّ تكرارها في الوقت الفعلي</h1>
+  <h1>حاسبة الأذكار - حتى مع الأخطاء في النطق</h1>
   <button id="start">ابدأ الاستماع</button>
   <div id="transcript-container"></div>
 
@@ -76,9 +76,10 @@
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "ar-SA";
-    recognition.continuous = true; 
-    recognition.interimResults = false; 
+    recognition.continuous = true;
+    recognition.interimResults = false;
 
+    // قائمة الأذكار المطلوبة
     const knownPrayers = [
       "سبحان الله",
       "الحمد لله",
@@ -88,12 +89,11 @@
       "اللهم صل وسلم على محمد"
     ];
 
-    let counters = {}; // عداد لتتبع التكرارات
+    let counters = {};
 
     startButton.onclick = function () {
       try {
         recognition.start();
-        console.log("بدأ الاستماع...");
       } catch (error) {
         console.error("لا يمكن بدء الاستماع:", error);
       }
@@ -115,25 +115,33 @@
     };
 
     recognition.onend = function () {
-      console.log("تم إيقاف الاستماع");
       recognition.start();
     };
 
-    // وظيفة للتحقق من الأذكار عند كل مرة تُذكر
+    // مقارنة نصوص مرنة تعتمد على التشابه (Fuzzy Matching)
+    function similarity(a, b) {
+      let commonLetters = 0;
+      for (let i = 0; i < Math.min(a.length, b.length); i++) {
+        if (a[i] === b[i]) {
+          commonLetters++;
+        }
+      }
+      return commonLetters / Math.max(a.length, b.length);
+    }
+
+    // وظيفة التحقق من الأذكار مع الأخطاء
     function detectPrayers(transcript) {
       knownPrayers.forEach(prayer => {
-        let regex = new RegExp(`\\b${prayer}\\b`, "g");
-        let matches = transcript.match(regex);
+        const similarityScore = similarity(transcript, prayer);
 
-        if (matches) {
-          let matchCount = matches.length; 
-          counters[prayer] = (counters[prayer] || 0) + matchCount;
+        if (similarityScore > 0.6) { // إذا كانت النسبة أكثر من 0.6 يُحتسب كأذكار
+          counters[prayer] = (counters[prayer] || 0) + 1;
           renderUI(prayer, counters[prayer]);
         }
       });
     }
 
-    // تحديث واجهة المستخدم لتُظهر التكرارات في الوقت الفعلي
+    // تحديث واجهة المستخدم عند حساب التكرار
     function renderUI(prayer, count) {
       const existingDiv = Array.from(transcriptContainer.children).find(div =>
         div.textContent.includes(prayer)
